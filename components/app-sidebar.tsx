@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useRouter } from "next/navigation"
 import {
   GraduationCap,
   Users,
@@ -12,8 +13,10 @@ import {
   CreditCard,
   LayoutDashboard,
   ChevronRight,
+  LogOut,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { createClient } from "@/lib/supabase/client"
 
 type NavItem = {
   name: string
@@ -58,6 +61,13 @@ interface AppSidebarProps {
 
 export function AppSidebar({ userRole = "secretaria" }: AppSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push("/auth/login")
+  }
 
   const filteredNavigation = navigation
     .filter((item) => !item.roles || item.roles.includes(userRole))
@@ -131,8 +141,15 @@ export function AppSidebar({ userRole = "secretaria" }: AppSidebarProps) {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-sidebar-border">
-        <div className="px-3 py-2 text-xs text-sidebar-foreground/50">
+      <div className="p-4 border-t border-sidebar-border space-y-2">
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm w-full text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Cerrar sesion
+        </button>
+        <div className="px-3 py-1 text-xs text-sidebar-foreground/50">
           The English Club - Manager v1.0
         </div>
       </div>
