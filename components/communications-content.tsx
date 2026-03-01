@@ -237,7 +237,14 @@ export function CommunicationsContent({
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
                             <AlertDialogAction
-                              onClick={() => deleteCommunication(message.id)}
+                              onClick={async () => {
+                                try {
+                                  await deleteCommunication(message.id)
+                                } catch (error) {
+                                  const msg = error instanceof Error ? error.message : "Error desconocido"
+                                  alert(`Error al eliminar mensaje: ${msg}`)
+                                }
+                              }}
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
                               Eliminar

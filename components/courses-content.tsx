@@ -159,9 +159,14 @@ export function CoursesContent({ courses }: CoursesContentProps) {
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={(e) => {
+                                onClick={async (e) => {
                                   e.preventDefault()
-                                  deleteCourse(course.id)
+                                  try {
+                                    await deleteCourse(course.id)
+                                  } catch (error) {
+                                    const message = error instanceof Error ? error.message : "Error desconocido"
+                                    alert(`Error al eliminar curso: ${message}`)
+                                  }
                                 }}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >

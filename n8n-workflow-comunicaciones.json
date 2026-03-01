@@ -1,0 +1,129 @@
+{
+  "name": "The English Club - Comunicaciones",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "comunicaciones",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "comunicaciones"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body.recipients",
+        "options": {
+          "destinationFieldName": "recipient",
+          "include": "selectedOtherFields",
+          "fields": "body.subject,body.content"
+        }
+      },
+      "id": "split-1",
+      "name": "Separar destinatarios",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nfor (const item of items) {\n  const recipient = item.json.recipient;\n  const subject = item.json.body?.subject || item.json.subject;\n  const content = item.json.body?.content || item.json.content;\n  const recipientName = recipient.name || 'Tutor';\n  const studentName = recipient.studentName || '';\n\n  item.json.to = recipient.email;\n  item.json.subject = subject;\n  item.json.html = `<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n</head>\n<body style=\"margin:0;padding:0;background-color:#f4f4f5;font-family:Arial,Helvetica,sans-serif;\">\n  <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#f4f4f5;padding:32px 0;\">\n    <tr>\n      <td align=\"center\">\n        <table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);\">\n          <tr>\n            <td style=\"background-color:#1e293b;padding:24px 32px;\">\n              <h1 style=\"margin:0;color:#ffffff;font-size:20px;font-weight:700;\">The English Club</h1>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"padding:32px;\">\n              <p style=\"margin:0 0 8px;color:#64748b;font-size:14px;\">Estimado/a <strong style=\"color:#1e293b;\">${recipientName}</strong>,</p>\n              <p style=\"margin:0 0 24px;color:#64748b;font-size:13px;\">Tutor de: <strong>${studentName}</strong></p>\n              <h2 style=\"margin:0 0 16px;color:#1e293b;font-size:18px;font-weight:600;\">${subject}</h2>\n              <div style=\"margin:0 0 24px;color:#334155;font-size:15px;line-height:1.6;white-space:pre-wrap;\">${content}</div>\n              <hr style=\"border:none;border-top:1px solid #e2e8f0;margin:24px 0;\" />\n              <p style=\"margin:0;color:#94a3b8;font-size:12px;\">Este mensaje fue enviado desde la plataforma de gestion de The English Club.</p>\n            </td>\n          </tr>\n          <tr>\n            <td style=\"background-color:#f8fafc;padding:16px 32px;text-align:center;\">\n              <p style=\"margin:0;color:#94a3b8;font-size:12px;\">The English Club &copy; ${new Date().getFullYear()}</p>\n            </td>\n          </tr>\n        </table>\n      </td>\n    </tr>\n  </table>\n</body>\n</html>`;\n}\n\nreturn items;"
+      },
+      "id": "code-1",
+      "name": "Armar email HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [710, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "gmail-1",
+      "name": "Enviar Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [940, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail - Configurar"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, message: 'Emails enviados' }) }}",
+        "options": {}
+      },
+      "id": "respond-1",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1170, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Separar destinatarios",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar destinatarios": {
+      "main": [
+        [
+          {
+            "node": "Armar email HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar email HTML": {
+      "main": [
+        [
+          {
+            "node": "Enviar Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Gmail": {
+      "main": [
+        [
+          {
+            "node": "Responder OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1
+}

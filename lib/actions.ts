@@ -94,6 +94,9 @@ export async function updateCourse(id: string, formData: FormData) {
 export async function deleteCourse(id: string) {
   const supabase = await createClient()
   // Delete related records first
+  await supabase.from("attendance").delete().eq("course_id", id)
+  await supabase.from("grades").delete().eq("course_id", id)
+  await supabase.from("reports").delete().eq("course_id", id)
   await supabase.from("communications").delete().eq("course_id", id)
   // Update students to remove course reference (don't delete students)
   await supabase.from("students").update({ course_id: null }).eq("course_id", id)
@@ -415,22 +418,22 @@ export async function createCommunication(formData: FormData) {
 
   if (error) throw error
 
-  // Enviar emails con Resend si se solicitó
-  if (sendEmail && process.env.RESEND_API_KEY) {
+  // Enviar emails via n8n si se solicitó
+  if (sendEmail && process.env.N8N_WEBHOOK_URL) {
     try {
       let recipients: { email: string; name: string; studentName: string }[] = []
-      
-      const query = supabase
+
+      let query = supabase
         .from("students")
         .select("first_name, last_name, tutor_name, tutor_email")
         .not("tutor_email", "is", null)
-      
+
       if (courseId) {
-        query.eq("course_id", courseId)
+        query = query.eq("course_id", courseId)
       }
 
       const { data: students } = await query
-      
+
       recipients = (students || [])
         .filter(s => s.tutor_email)
         .map(s => ({
@@ -440,12 +443,12 @@ export async function createCommunication(formData: FormData) {
         }))
 
       if (recipients.length > 0) {
-        const { sendCommunicationEmails } = await import("@/lib/email")
+        const { sendCommunicationEmails } = await import("@/lib/n8n")
         await sendCommunicationEmails(title, content, recipients)
       }
     } catch (emailError) {
       // No fallar si el email falla, el mensaje ya está guardado
-      console.error("Error enviando emails con Resend:", emailError)
+      console.error("Error enviando emails via n8n:", emailError)
     }
   }
 
