@@ -264,7 +264,7 @@ export function PaymentsContent({ payments, students, concepts }: PaymentsConten
   }
 
   return (
-    <div className="p-8">
+    <div>
       <PageHeader
         title="Gestion de Pagos"
         description="Control de pagos mensuales por alumno"
@@ -599,9 +599,9 @@ export function PaymentsContent({ payments, students, concepts }: PaymentsConten
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los estados</SelectItem>
-                <SelectItem value="paid">Pagado</SelectItem>
-                <SelectItem value="pending">Pendiente</SelectItem>
-                <SelectItem value="overdue">Vencido</SelectItem>
+                <SelectItem value="pagado">Pagado</SelectItem>
+                <SelectItem value="pendiente">Pendiente</SelectItem>
+                <SelectItem value="vencido">Vencido</SelectItem>
               </SelectContent>
             </Select>
             <Select value={monthFilter} onValueChange={setMonthFilter}>
@@ -694,7 +694,7 @@ export function PaymentsContent({ payments, students, concepts }: PaymentsConten
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {payment.status !== "paid" && (
+                        {payment.status !== "pagado" && (
                           <Dialog
                             open={registerDialogOpen && selectedPayment?.id === payment.id}
                             onOpenChange={(open) => {
