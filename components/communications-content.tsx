@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { MessageSquare, Send, Calendar, User, Plus, Mail, Trash2 } from "lucide-react"
+import { MessageSquare, Send, Calendar, User, Plus, Mail, Trash2, Download } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { PageHeader } from "@/components/page-header"
 import { createCommunication, deleteCommunication } from "@/lib/actions"
+import { exportToExcel } from "@/lib/export-utils"
 import type { Course, Communication } from "@/lib/types"
 
 interface CommunicationsContentProps {
@@ -153,10 +154,33 @@ export function CommunicationsContent({
         title="Comunicaciones"
         description="Mensajes y avisos por curso"
         action={
-          <Button onClick={() => setIsDialogOpen(true)} className="bg-accent hover:bg-accent/90">
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo Mensaje
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                const data = filteredCommunications.map(m => ({
+                  fecha: new Date(m.created_at).toLocaleDateString("es-AR"),
+                  curso: courses.find(c => c.id === m.course_id)?.name || "Todos",
+                  asunto: m.title,
+                  mensaje: m.content,
+                }))
+                exportToExcel(data, `comunicaciones_${new Date().toISOString().split("T")[0]}`, [
+                  { key: "fecha", label: "Fecha" },
+                  { key: "curso", label: "Curso" },
+                  { key: "asunto", label: "Asunto" },
+                  { key: "mensaje", label: "Mensaje" },
+                ])
+              }}
+              disabled={filteredCommunications.length === 0}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Exportar
+            </Button>
+            <Button onClick={() => setIsDialogOpen(true)} className="bg-accent hover:bg-accent/90">
+              <Plus className="w-4 h-4 mr-2" />
+              Nuevo Mensaje
+            </Button>
+          </div>
         }
       />
 

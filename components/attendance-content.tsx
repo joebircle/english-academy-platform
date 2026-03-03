@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Check, X, Clock, AlertCircle, Save } from "lucide-react"
+import { Check, X, Clock, AlertCircle, Save, Download } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select"
 import { PageHeader } from "@/components/page-header"
 import { upsertAttendance } from "@/lib/actions"
+import { exportToExcel } from "@/lib/export-utils"
 import type { Course, Student, AttendanceStatus } from "@/lib/types"
 
 interface AttendanceContentProps {
@@ -301,13 +302,35 @@ export function AttendanceContent({ courses, students }: AttendanceContentProps)
               <div className="text-sm text-muted-foreground">
                 {Object.keys(attendanceRecords).length} de {courseStudents.length} alumnos registrados
               </div>
-              <Button 
-                onClick={handleSaveAttendance} 
-                disabled={isPending || Object.keys(attendanceRecords).length === 0}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {isPending ? "Guardando..." : saveStatus === "saved" ? "Guardado!" : "Guardar Asistencia"}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const statusLabel = (s: AttendanceStatus | undefined) =>
+                      s === "presente" ? "Presente" : s === "ausente" ? "Ausente" : s === "tardanza" ? "Tardanza" : s === "justificado" ? "Justificado" : "Sin registrar"
+                    const data = courseStudents.map(s => ({
+                      nombre: `${s.last_name}, ${s.first_name}`,
+                      estado: statusLabel(attendanceRecords[s.id]),
+                    }))
+                    const courseName = selectedCourseData?.name || "curso"
+                    exportToExcel(data, `asistencia_${courseName}_${selectedDate}`, [
+                      { key: "nombre", label: "Alumno" },
+                      { key: "estado", label: "Estado" },
+                    ])
+                  }}
+                  disabled={Object.keys(attendanceRecords).length === 0}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Exportar
+                </Button>
+                <Button
+                  onClick={handleSaveAttendance}
+                  disabled={isPending || Object.keys(attendanceRecords).length === 0}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {isPending ? "Guardando..." : saveStatus === "saved" ? "Guardado!" : "Guardar Asistencia"}
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

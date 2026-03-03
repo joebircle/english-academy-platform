@@ -342,7 +342,14 @@ export function StudentsContent({ students, courses, paymentStatuses = {} }: Stu
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={() => deleteStudent(student.id)}
+                                onClick={async () => {
+                                  try {
+                                    await deleteStudent(student.id)
+                                  } catch (error) {
+                                    const msg = error instanceof Error ? error.message : "Error desconocido"
+                                    alert(`Error al eliminar alumno: ${msg}`)
+                                  }
+                                }}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
                                 Eliminar

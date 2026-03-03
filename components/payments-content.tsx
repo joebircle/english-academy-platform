@@ -785,7 +785,14 @@ export function PaymentsContent({ payments, students, concepts }: PaymentsConten
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={() => deletePayment(payment.id)}
+                                onClick={async () => {
+                                  try {
+                                    await deletePayment(payment.id)
+                                  } catch (error) {
+                                    const msg = error instanceof Error ? error.message : "Error desconocido"
+                                    alert(`Error al eliminar pago: ${msg}`)
+                                  }
+                                }}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
                                 Eliminar

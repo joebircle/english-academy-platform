@@ -385,6 +385,13 @@ export async function upsertReport(
   revalidatePath("/academico/informes", "max")
 }
 
+export async function deleteReport(id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from("reports").delete().eq("id", id)
+  if (error) throw error
+  revalidatePath("/academico/informes", "max")
+}
+
 // ============ COMMUNICATIONS ============
 
 export async function getCommunications(courseId?: string): Promise<Communication[]> {

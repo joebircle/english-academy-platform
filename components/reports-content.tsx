@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { FileText, Calendar, User, ChevronRight, Save } from "lucide-react"
+import { FileText, Calendar, User, ChevronRight, Save, Trash2, Download } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,8 +21,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { PageHeader } from "@/components/page-header"
-import { upsertReport } from "@/lib/actions"
+import { upsertReport, deleteReport } from "@/lib/actions"
+import { exportToExcel } from "@/lib/export-utils"
 import type { Course, Student, Report, ReportStatus } from "@/lib/types"
 
 interface ReportsContentProps {
@@ -88,6 +100,27 @@ export function ReportsContent({ courses, students, reports }: ReportsContentPro
     }
   }
 
+  const handleExportReports = () => {
+    const data = courseStudents.map(s => {
+      const report = getStudentReport(s.id)
+      return {
+        nombre: `${s.last_name}, ${s.first_name}`,
+        periodo: currentPeriod?.name || "",
+        estado: report ? "Completado" : "Pendiente",
+        fecha: report ? new Date(report.created_at).toLocaleDateString("es-AR") : "-",
+        contenido: report?.content || "-",
+      }
+    })
+    const courseName = courses.find(c => c.id === selectedCourse)?.name || "curso"
+    exportToExcel(data, `informes_${courseName}_${currentPeriod?.name}_${currentYear}`, [
+      { key: "nombre", label: "Alumno" },
+      { key: "periodo", label: "Periodo" },
+      { key: "estado", label: "Estado" },
+      { key: "fecha", label: "Fecha" },
+      { key: "contenido", label: "Contenido" },
+    ])
+  }
+
   const completedCount = courseStudents.filter((s) => getStudentReport(s.id)).length
   const pendingCount = courseStudents.length - completedCount
   const currentPeriod = PERIODS.find((p) => p.id === selectedPeriod)
@@ -97,6 +130,12 @@ export function ReportsContent({ courses, students, reports }: ReportsContentPro
       <PageHeader
         title="Informes"
         description="Informes por etapa de los alumnos (2 por año)"
+        action={
+          <Button variant="outline" onClick={handleExportReports} disabled={courseStudents.length === 0}>
+            <Download className="w-4 h-4 mr-2" />
+            Exportar Excel
+          </Button>
+        }
       />
 
       {/* Filters */}
@@ -209,6 +248,39 @@ export function ReportsContent({ courses, students, reports }: ReportsContentPro
                         {hasReport ? "Ver/Editar" : "Crear informe"}
                         <ChevronRight className="w-4 h-4 ml-1" />
                       </Button>
+                      {hasReport && report && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Eliminar informe</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta accion no se puede deshacer. Se eliminara el informe de {student.first_name} {student.last_name}.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={async () => {
+                                  try {
+                                    await deleteReport(report.id)
+                                  } catch (error) {
+                                    const msg = error instanceof Error ? error.message : "Error desconocido"
+                                    alert(`Error al eliminar informe: ${msg}`)
+                                  }
+                                }}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Eliminar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
                   </div>
                 )
