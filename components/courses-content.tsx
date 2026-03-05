@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Users, Clock, ChevronRight, Plus, BookOpen, Trash2 } from "lucide-react"
+import { Users, Clock, ChevronRight, Plus, BookOpen, Trash2, Pencil } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -14,7 +14,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   AlertDialog,
@@ -28,7 +27,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { PageHeader } from "@/components/page-header"
-import { createCourse, deleteCourse } from "@/lib/actions"
+import { createCourse, updateCourse, deleteCourse } from "@/lib/actions"
 import type { Course } from "@/lib/types"
 
 interface CoursesContentProps {
@@ -37,32 +36,47 @@ interface CoursesContentProps {
 
 export function CoursesContent({ courses }: CoursesContentProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null)
 
   async function handleSubmit(formData: FormData) {
     try {
-      await createCourse(formData)
+      if (editingCourse) {
+        await updateCourse(editingCourse.id, formData)
+      } else {
+        await createCourse(formData)
+      }
       setIsDialogOpen(false)
+      setEditingCourse(null)
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Error desconocido"
-      alert(`Error al crear curso: ${message}`)
+      alert(`Error al ${editingCourse ? "editar" : "crear"} curso: ${message}`)
     }
   }
 
-  // Dialog separado para poder abrirlo desde cualquier lugar
-  const AddCourseDialog = (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+  function openCreate() {
+    setEditingCourse(null)
+    setIsDialogOpen(true)
+  }
+
+  function openEdit(course: Course) {
+    setEditingCourse(course)
+    setIsDialogOpen(true)
+  }
+
+  const CourseDialog = (
+    <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setEditingCourse(null) }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Nuevo Curso</DialogTitle>
+          <DialogTitle>{editingCourse ? "Editar Curso" : "Nuevo Curso"}</DialogTitle>
         </DialogHeader>
         <form action={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Nombre del curso</Label>
-            <Input id="name" name="name" placeholder="Ingles Basico A" required />
+            <Input id="name" name="name" placeholder="Ingles Basico A" defaultValue={editingCourse?.name || ""} required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="level">Nivel</Label>
-            <Input id="level" name="level" placeholder="A1 - Principiante" required />
+            <Input id="level" name="level" placeholder="A1 - Principiante" defaultValue={editingCourse?.level || ""} required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="schedule">Horario</Label>
@@ -70,6 +84,7 @@ export function CoursesContent({ courses }: CoursesContentProps) {
               id="schedule"
               name="schedule"
               placeholder="Lunes y Miercoles 18:00-19:30"
+              defaultValue={editingCourse?.schedule || ""}
               required
             />
           </div>
@@ -79,12 +94,12 @@ export function CoursesContent({ courses }: CoursesContentProps) {
               id="max_students"
               name="max_students"
               type="number"
-              defaultValue={15}
+              defaultValue={editingCourse?.max_students || 15}
               min={1}
             />
           </div>
           <Button type="submit" className="w-full">
-            Crear Curso
+            {editingCourse ? "Guardar Cambios" : "Crear Curso"}
           </Button>
         </form>
       </DialogContent>
@@ -93,12 +108,12 @@ export function CoursesContent({ courses }: CoursesContentProps) {
 
   return (
     <div className="p-8">
-      {AddCourseDialog}
+      {CourseDialog}
       <PageHeader
         title="Cursos"
         description="Listado de cursos activos de la academia"
         action={
-          <Button onClick={() => setIsDialogOpen(true)}>
+          <Button onClick={openCreate}>
             <Plus className="w-4 h-4 mr-2" />
             Nuevo Curso
           </Button>
@@ -112,7 +127,7 @@ export function CoursesContent({ courses }: CoursesContentProps) {
             <p className="text-muted-foreground mb-4">
               No hay cursos registrados
             </p>
-            <Button onClick={() => setIsDialogOpen(true)}>
+            <Button onClick={openCreate}>
               <Plus className="w-4 h-4 mr-2" />
               Crear primer curso
             </Button>
@@ -138,11 +153,19 @@ export function CoursesContent({ courses }: CoursesContentProps) {
                         </Badge>
                       </div>
                       <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={(e) => { e.preventDefault(); openEdit(course) }}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8 text-destructive hover:text-destructive"
                               onClick={(e) => e.preventDefault()}
                             >

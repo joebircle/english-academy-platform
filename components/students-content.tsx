@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Search, Filter, ChevronRight, Plus, Users, Download, Trash2, CreditCard } from "lucide-react"
+import { Search, Filter, ChevronRight, Plus, Users, Download, Trash2, CreditCard, Pencil } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -27,7 +27,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   AlertDialog,
@@ -42,7 +41,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Label } from "@/components/ui/label"
 import { PageHeader } from "@/components/page-header"
-import { createStudent, deleteStudent } from "@/lib/actions"
+import { createStudent, updateStudent, deleteStudent } from "@/lib/actions"
 import { exportToExcel, formatDateForExport } from "@/lib/export-utils"
 import type { Student, Course } from "@/lib/types"
 
@@ -58,6 +57,7 @@ export function StudentsContent({ students, courses, paymentStatuses = {} }: Stu
   const [paymentFilter, setPaymentFilter] = useState<string>("all")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedCourseId, setSelectedCourseId] = useState<string>("")
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null)
 
   const filteredStudents = students.filter((student) => {
     const matchesSearch =
@@ -79,17 +79,33 @@ export function StudentsContent({ students, courses, paymentStatuses = {} }: Stu
 
   async function handleSubmit(formData: FormData) {
     try {
-      // Add course_id from state since Select doesn't work with form action
       if (selectedCourseId) {
         formData.set("course_id", selectedCourseId)
       }
-      await createStudent(formData)
+      if (editingStudent) {
+        await updateStudent(editingStudent.id, formData)
+      } else {
+        await createStudent(formData)
+      }
       setIsDialogOpen(false)
       setSelectedCourseId("")
+      setEditingStudent(null)
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Error desconocido"
-      alert(`Error al crear alumno: ${message}`)
+      alert(`Error al ${editingStudent ? "editar" : "crear"} alumno: ${message}`)
     }
+  }
+
+  function openCreate() {
+    setEditingStudent(null)
+    setSelectedCourseId("")
+    setIsDialogOpen(true)
+  }
+
+  function openEdit(student: Student) {
+    setEditingStudent(student)
+    setSelectedCourseId(student.course_id || "")
+    setIsDialogOpen(true)
   }
 
   function handleExport() {
@@ -114,27 +130,26 @@ export function StudentsContent({ students, courses, paymentStatuses = {} }: Stu
     ])
   }
 
-  // Dialog component - rendered separately so it can be opened from empty state
-  const AddStudentDialog = (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+  const StudentDialog = (
+    <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setEditingStudent(null) }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Nuevo Alumno</DialogTitle>
+          <DialogTitle>{editingStudent ? "Editar Alumno" : "Nuevo Alumno"}</DialogTitle>
         </DialogHeader>
         <form action={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="first_name">Nombre</Label>
-              <Input id="first_name" name="first_name" required />
+              <Input id="first_name" name="first_name" defaultValue={editingStudent?.first_name || ""} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="last_name">Apellido</Label>
-              <Input id="last_name" name="last_name" required />
+              <Input id="last_name" name="last_name" defaultValue={editingStudent?.last_name || ""} required />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="birth_date">Fecha de nacimiento</Label>
-            <Input id="birth_date" name="birth_date" type="date" />
+            <Input id="birth_date" name="birth_date" type="date" defaultValue={editingStudent?.birth_date || ""} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="course_id">Curso</Label>
@@ -159,20 +174,20 @@ export function StudentsContent({ students, courses, paymentStatuses = {} }: Stu
           </div>
           <div className="space-y-2">
             <Label htmlFor="tutor_name">Nombre del tutor</Label>
-            <Input id="tutor_name" name="tutor_name" />
+            <Input id="tutor_name" name="tutor_name" defaultValue={editingStudent?.tutor_name || ""} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="tutor_phone">Telefono</Label>
-              <Input id="tutor_phone" name="tutor_phone" />
+              <Input id="tutor_phone" name="tutor_phone" defaultValue={editingStudent?.tutor_phone || ""} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="tutor_email">Email</Label>
-              <Input id="tutor_email" name="tutor_email" type="email" />
+              <Input id="tutor_email" name="tutor_email" type="email" defaultValue={editingStudent?.tutor_email || ""} />
             </div>
           </div>
           <Button type="submit" className="w-full">
-            Guardar Alumno
+            {editingStudent ? "Guardar Cambios" : "Guardar Alumno"}
           </Button>
         </form>
       </DialogContent>
@@ -181,7 +196,7 @@ export function StudentsContent({ students, courses, paymentStatuses = {} }: Stu
 
   return (
     <div className="p-8">
-      {AddStudentDialog}
+      {StudentDialog}
       <PageHeader
         title="Alumnos"
         description={`${students.length} alumnos registrados`}
@@ -191,7 +206,7 @@ export function StudentsContent({ students, courses, paymentStatuses = {} }: Stu
               <Download className="w-4 h-4 mr-2" />
               Exportar Excel
             </Button>
-            <Button onClick={() => setIsDialogOpen(true)} className="bg-accent hover:bg-accent/90">
+            <Button onClick={openCreate} className="bg-accent hover:bg-accent/90">
               <Plus className="w-4 h-4 mr-2" />
               Agregar Alumno
             </Button>
@@ -253,7 +268,7 @@ export function StudentsContent({ students, courses, paymentStatuses = {} }: Stu
                   : "No se encontraron alumnos"}
               </p>
               {students.length === 0 && (
-                <Button onClick={() => setIsDialogOpen(true)} className="bg-accent hover:bg-accent/90">
+                <Button onClick={openCreate} className="bg-accent hover:bg-accent/90">
                   <Plus className="w-4 h-4 mr-2" />
                   Agregar primer alumno
                 </Button>
@@ -320,6 +335,9 @@ export function StudentsContent({ students, courses, paymentStatuses = {} }: Stu
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(student)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
                         <Link href={`/academico/alumnos/${student.id}`}>
                           <Button variant="ghost" size="sm">
                             Ver ficha
