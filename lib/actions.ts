@@ -67,6 +67,7 @@ export async function createCourse(formData: FormData) {
     level: formData.get("level") as string,
     schedule: formData.get("schedule") as string,
     max_students: Number(formData.get("max_students")) || 15,
+    teacher_name: (formData.get("teacher_name") as string) || null,
     teacher_id: (formData.get("teacher_id") as string) || null,
   })
 
@@ -83,6 +84,7 @@ export async function updateCourse(id: string, formData: FormData) {
       level: formData.get("level") as string,
       schedule: formData.get("schedule") as string,
       max_students: Number(formData.get("max_students")) || 15,
+      teacher_name: (formData.get("teacher_name") as string) || null,
       teacher_id: (formData.get("teacher_id") as string) || null,
     })
     .eq("id", id)
