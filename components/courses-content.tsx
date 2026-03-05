@@ -89,6 +89,10 @@ export function CoursesContent({ courses }: CoursesContentProps) {
             />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="teacher_name">Docente</Label>
+            <Input id="teacher_name" name="teacher_name" placeholder="Nombre del docente" defaultValue={editingCourse?.teacher_name || ""} />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="max_students">Capacidad maxima</Label>
             <Input
               id="max_students"
