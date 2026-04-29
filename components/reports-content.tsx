@@ -268,6 +268,7 @@ export function ReportsContent({ courses, students, reports }: ReportsContentPro
                                 onClick={async () => {
                                   try {
                                     await deleteReport(report.id)
+                                    window.location.reload()
                                   } catch (error) {
                                     const msg = error instanceof Error ? error.message : "Error desconocido"
                                     alert(`Error al eliminar informe: ${msg}`)

@@ -73,13 +73,15 @@ export function GradesContent({ courses, students, grades }: GradesContentProps)
 
     setIsSaving(true)
     try {
-      const savePromises = Object.entries(editingGrades).map(([key, score]) => {
+      // Save grades sequentially to avoid race conditions
+      for (const [key, score] of Object.entries(editingGrades)) {
         const [studentId, examNumber] = key.split("-")
-        return upsertGrade(studentId, selectedCourse, Number(examNumber), score)
-      })
-      await Promise.all(savePromises)
+        await upsertGrade(studentId, selectedCourse, Number(examNumber), score)
+      }
       setEditingGrades({})
       alert("Calificaciones guardadas correctamente")
+      // Force page refresh to show updated data
+      window.location.reload()
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error desconocido"
       alert(`Error al guardar las calificaciones: ${message}`)

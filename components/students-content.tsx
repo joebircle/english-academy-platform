@@ -304,7 +304,7 @@ export function StudentsContent({ students, courses, paymentStatuses = {} }: Stu
                           {student.birth_date && (
                             <p className="text-xs text-muted-foreground">
                               Nacimiento:{" "}
-                              {new Date(student.birth_date).toLocaleDateString("es-AR")}
+                              {new Date(student.birth_date + "T12:00:00").toLocaleDateString("es-AR")}
                             </p>
                           )}
                         </div>
