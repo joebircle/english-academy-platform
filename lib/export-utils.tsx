@@ -5,18 +5,21 @@ export function exportToExcel<T extends Record<string, unknown>>(
   filename: string,
   columns: { key: keyof T; label: string }[]
 ) {
-  const headers = columns.map((col) => col.label).join(",")
+  // Use semicolon as separator for better Excel compatibility in Spanish locales
+  const separator = ";"
+  const headers = columns.map((col) => col.label).join(separator)
   const rows = data.map((row) =>
     columns
       .map((col) => {
         const value = row[col.key]
         const stringValue = value?.toString() ?? ""
-        if (stringValue.includes(",") || stringValue.includes('"')) {
+        // Escape quotes and wrap in quotes if contains separator, quotes, or newlines
+        if (stringValue.includes(separator) || stringValue.includes('"') || stringValue.includes("\n")) {
           return `"${stringValue.replace(/"/g, '""')}"`
         }
         return stringValue
       })
-      .join(",")
+      .join(separator)
   )
 
   const csvContent = [headers, ...rows].join("\n")
@@ -34,7 +37,14 @@ export function exportToExcel<T extends Record<string, unknown>>(
 }
 
 export function formatDateForExport(date: string | Date): string {
-  return new Date(date).toLocaleDateString("es-ES")
+  // Handle date strings in YYYY-MM-DD format to avoid timezone issues
+  if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [year, month, day] = date.split("-")
+    return `${day}/${month}/${year}`
+  }
+  // For Date objects, use UTC to avoid timezone shifts
+  const d = new Date(date)
+  return d.toLocaleDateString("es-ES", { timeZone: "UTC" })
 }
 
 export function formatCurrencyForExport(amount: number): string {

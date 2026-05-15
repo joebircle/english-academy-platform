@@ -24,9 +24,13 @@ interface AttendanceContentProps {
 
 export function AttendanceContent({ courses, students }: AttendanceContentProps) {
   const [selectedCourse, setSelectedCourse] = useState<string>(courses[0]?.id || "")
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  )
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, "0")
+    const day = String(now.getDate()).padStart(2, "0")
+    return `${year}-${month}-${day}`
+  })
   const [attendanceRecords, setAttendanceRecords] = useState<
     Record<string, AttendanceStatus>
   >({})
