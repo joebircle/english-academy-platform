@@ -22,7 +22,8 @@ export function exportToExcel<T extends Record<string, unknown>>(
       .join(separator)
   )
 
-  const csvContent = [headers, ...rows].join("\n")
+  // Prepend "sep=;" so Excel respects the separator regardless of system locale
+  const csvContent = [`sep=${separator}`, headers, ...rows].join("\n")
   const BOM = "\uFEFF"
   const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" })
 

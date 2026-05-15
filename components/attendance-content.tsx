@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { Check, X, Clock, AlertCircle, Save, Download } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -23,6 +24,7 @@ interface AttendanceContentProps {
 }
 
 export function AttendanceContent({ courses, students }: AttendanceContentProps) {
+  const router = useRouter()
   const [selectedCourse, setSelectedCourse] = useState<string>(courses[0]?.id || "")
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     const now = new Date()
@@ -56,11 +58,11 @@ export function AttendanceContent({ courses, students }: AttendanceContentProps)
     setSaveStatus("saving")
     startTransition(async () => {
       try {
-        const promises = Object.entries(attendanceRecords).map(([studentId, status]) =>
-          upsertAttendance(studentId, selectedCourse, selectedDate, status)
-        )
-        await Promise.all(promises)
+        for (const [studentId, status] of Object.entries(attendanceRecords)) {
+          await upsertAttendance(studentId, selectedCourse, selectedDate, status)
+        }
         setSaveStatus("saved")
+        router.refresh()
         setTimeout(() => setSaveStatus("idle"), 3000)
       } catch (error) {
         console.error("Error saving attendance:", error)
