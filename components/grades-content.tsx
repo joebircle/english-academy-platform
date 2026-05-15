@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { FileText, TrendingUp, TrendingDown, Minus, Save, Download } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -46,6 +47,7 @@ const EXTRA_GRADES = [
 ]
 
 export function GradesContent({ courses, students, grades }: GradesContentProps) {
+  const router = useRouter()
   const [selectedCourse, setSelectedCourse] = useState<string>(courses[0]?.id || "")
   const [editingGrades, setEditingGrades] = useState<Record<string, number | null>>({})
   const [isSaving, setIsSaving] = useState(false)
@@ -73,15 +75,13 @@ export function GradesContent({ courses, students, grades }: GradesContentProps)
 
     setIsSaving(true)
     try {
-      // Save grades sequentially to avoid race conditions
       for (const [key, score] of Object.entries(editingGrades)) {
         const [studentId, examNumber] = key.split("-")
         await upsertGrade(studentId, selectedCourse, Number(examNumber), score)
       }
       setEditingGrades({})
+      router.refresh()
       alert("Calificaciones guardadas correctamente")
-      // Force page refresh to show updated data
-      window.location.reload()
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error desconocido"
       alert(`Error al guardar las calificaciones: ${message}`)
