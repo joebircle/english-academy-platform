@@ -1,20 +1,23 @@
 "use client"
 
-export function exportToExcel<T extends Record<string, unknown>>(
+export const CSV_SEPARATOR = ";"
+
+export function buildCsv<T extends Record<string, unknown>>(
   data: T[],
-  filename: string,
-  columns: { key: keyof T; label: string }[]
-) {
-  // Use semicolon as separator for better Excel compatibility in Spanish locales
-  const separator = ";"
+  columns: { key: keyof T; label: string }[],
+  separator: string = CSV_SEPARATOR
+): string {
   const headers = columns.map((col) => col.label).join(separator)
   const rows = data.map((row) =>
     columns
       .map((col) => {
         const value = row[col.key]
         const stringValue = value?.toString() ?? ""
-        // Escape quotes and wrap in quotes if contains separator, quotes, or newlines
-        if (stringValue.includes(separator) || stringValue.includes('"') || stringValue.includes("\n")) {
+        if (
+          stringValue.includes(separator) ||
+          stringValue.includes('"') ||
+          stringValue.includes("\n")
+        ) {
           return `"${stringValue.replace(/"/g, '""')}"`
         }
         return stringValue
@@ -23,7 +26,15 @@ export function exportToExcel<T extends Record<string, unknown>>(
   )
 
   // Prepend "sep=;" so Excel respects the separator regardless of system locale
-  const csvContent = [`sep=${separator}`, headers, ...rows].join("\n")
+  return [`sep=${separator}`, headers, ...rows].join("\n")
+}
+
+export function exportToExcel<T extends Record<string, unknown>>(
+  data: T[],
+  filename: string,
+  columns: { key: keyof T; label: string }[]
+) {
+  const csvContent = buildCsv(data, columns)
   const BOM = "\uFEFF"
   const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" })
 
