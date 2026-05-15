@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { FileText, Calendar, User, ChevronRight, Save, Trash2, Download } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -50,6 +51,7 @@ const PERIODS = [
 ]
 
 export function ReportsContent({ courses, students, reports }: ReportsContentProps) {
+  const router = useRouter()
   const [selectedCourse, setSelectedCourse] = useState<string>(courses[0]?.id || "")
   const [selectedPeriod, setSelectedPeriod] = useState<number>(1)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -92,7 +94,7 @@ export function ReportsContent({ courses, students, reports }: ReportsContentPro
       setIsDialogOpen(false)
       setEditingStudent(null)
       setReportContent("")
-      window.location.reload()
+      router.refresh()
     } catch (error) {
       alert("Error al guardar el informe")
     } finally {
@@ -268,7 +270,7 @@ export function ReportsContent({ courses, students, reports }: ReportsContentPro
                                 onClick={async () => {
                                   try {
                                     await deleteReport(report.id)
-                                    window.location.reload()
+                                    router.refresh()
                                   } catch (error) {
                                     const msg = error instanceof Error ? error.message : "Error desconocido"
                                     alert(`Error al eliminar informe: ${msg}`)
