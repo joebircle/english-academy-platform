@@ -13,7 +13,7 @@ import {
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import type { Student, Course } from "@/lib/types"
+import type { Student, Course, UserRole } from "@/lib/types"
 
 interface DashboardContentProps {
   stats: {
@@ -24,12 +24,15 @@ interface DashboardContentProps {
   }
   recentStudents: Student[]
   courses: Course[]
+  userRole: UserRole
 }
 
 export function DashboardContent({
   stats,
   recentStudents,
+  userRole,
 }: DashboardContentProps) {
+  const canSeePayments = userRole !== "profesor"
   return (
     <div className="p-8">
       <div className="mb-8">
@@ -42,7 +45,7 @@ export function DashboardContent({
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${canSeePayments ? "lg:grid-cols-4" : "lg:grid-cols-2"} gap-4 mb-8`}>
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -83,51 +86,55 @@ export function DashboardContent({
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pagos Pendientes</p>
-                <p className="text-3xl font-semibold mt-1">
-                  ${stats.pendingPayments.toLocaleString()}
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-lg bg-warning/10 flex items-center justify-center">
-                <Clock className="w-4 h-4 text-warning-foreground" />
-              </div>
-            </div>
-            <Link
-              href="/financiero/pagos?estado=pending"
-              className="flex items-center gap-1 mt-3 text-sm text-primary hover:underline"
-            >
-              Ver detalles
-              <ArrowRight className="w-3 h-3" />
-            </Link>
-          </CardContent>
-        </Card>
+        {canSeePayments && (
+          <>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Pagos Pendientes</p>
+                    <p className="text-3xl font-semibold mt-1">
+                      ${stats.pendingPayments.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 rounded-lg bg-warning/10 flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-warning-foreground" />
+                  </div>
+                </div>
+                <Link
+                  href="/financiero/pagos?estado=pending"
+                  className="flex items-center gap-1 mt-3 text-sm text-primary hover:underline"
+                >
+                  Ver detalles
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pagos Vencidos</p>
-                <p className="text-3xl font-semibold mt-1">
-                  ${stats.overduePayments.toLocaleString()}
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-lg bg-destructive/10 flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-destructive" />
-              </div>
-            </div>
-            <Link
-              href="/financiero/pagos?estado=overdue"
-              className="flex items-center gap-1 mt-3 text-sm text-destructive hover:underline"
-            >
-              Requiere atencion
-              <ArrowRight className="w-3 h-3" />
-            </Link>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Pagos Vencidos</p>
+                    <p className="text-3xl font-semibold mt-1">
+                      ${stats.overduePayments.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 rounded-lg bg-destructive/10 flex items-center justify-center">
+                    <AlertCircle className="w-6 h-6 text-destructive" />
+                  </div>
+                </div>
+                <Link
+                  href="/financiero/pagos?estado=overdue"
+                  className="flex items-center gap-1 mt-3 text-sm text-destructive hover:underline"
+                >
+                  Requiere atencion
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
       {/* Quick Actions and Recent */}
@@ -158,16 +165,18 @@ export function DashboardContent({
                 <ArrowRight className="w-4 h-4 ml-auto" />
               </Button>
             </Link>
-            <Link href="/financiero/pagos">
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3 h-12 bg-transparent"
-              >
-                <CreditCard className="w-5 h-5 text-primary" />
-                <span>Registrar Pago</span>
-                <ArrowRight className="w-4 h-4 ml-auto" />
-              </Button>
-            </Link>
+            {canSeePayments && (
+              <Link href="/financiero/pagos">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-3 h-12 bg-transparent"
+                >
+                  <CreditCard className="w-5 h-5 text-primary" />
+                  <span>Registrar Pago</span>
+                  <ArrowRight className="w-4 h-4 ml-auto" />
+                </Button>
+              </Link>
+            )}
           </CardContent>
         </Card>
 
