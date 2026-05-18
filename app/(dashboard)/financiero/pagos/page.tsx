@@ -1,7 +1,13 @@
+import { redirect } from "next/navigation"
 import { PaymentsPageWrapper } from "@/components/payments-page-wrapper"
-import { getPayments, getStudents, getPaymentConcepts, getCourses } from "@/lib/actions"
+import { getCurrentUser, getPayments, getStudents, getPaymentConcepts, getCourses } from "@/lib/actions"
 
 export default async function PaymentsPage() {
+  const currentUser = await getCurrentUser()
+  if (currentUser?.profile?.role === "profesor") {
+    redirect("/")
+  }
+
   const [payments, students, concepts, courses] = await Promise.all([
     getPayments(),
     getStudents(),
