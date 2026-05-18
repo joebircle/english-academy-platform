@@ -471,9 +471,33 @@ export async function deleteCommunication(id: string) {
   revalidatePath("/academico/comunicaciones", "max")
 }
 
+// ============ PAYMENT ACCESS CONTROL ============
+
+// Profesores cannot access financial data. Reads return empty; writes throw.
+// This is the application-layer enforcement (no DB migration required).
+async function isProfesor(): Promise<boolean> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single()
+  return profile?.role === "profesor"
+}
+
+async function assertCanWritePayments() {
+  if (await isProfesor()) {
+    throw new Error("Forbidden: profesores cannot modify financial data")
+  }
+}
+
 // ============ PAYMENT CONCEPTS ============
 
 export async function getPaymentConcepts(): Promise<PaymentConcept[]> {
+  if (await isProfesor()) return []
+
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("payment_concepts")
@@ -488,6 +512,7 @@ export async function getPaymentConcepts(): Promise<PaymentConcept[]> {
 }
 
 export async function createPaymentConcept(formData: FormData) {
+  await assertCanWritePayments()
   const supabase = await createClient()
   const { error } = await supabase.from("payment_concepts").insert({
     name: formData.get("name") as string,
@@ -501,6 +526,7 @@ export async function createPaymentConcept(formData: FormData) {
 }
 
 export async function updatePaymentConcept(id: string, formData: FormData) {
+  await assertCanWritePayments()
   const supabase = await createClient()
   const { error } = await supabase
     .from("payment_concepts")
@@ -517,6 +543,7 @@ export async function updatePaymentConcept(id: string, formData: FormData) {
 }
 
 export async function deletePaymentConcept(id: string) {
+  await assertCanWritePayments()
   const supabase = await createClient()
   const { error } = await supabase
     .from("payment_concepts")
@@ -530,6 +557,8 @@ export async function deletePaymentConcept(id: string) {
 // ============ PAYMENTS ============
 
 export async function getStudentPaymentStatuses(): Promise<Record<string, "al_dia" | "con_deuda">> {
+  if (await isProfesor()) return {}
+
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("payments")
@@ -552,6 +581,8 @@ export async function getPayments(
   studentId?: string,
   status?: PaymentStatus
 ): Promise<Payment[]> {
+  if (await isProfesor()) return []
+
   const supabase = await createClient()
   let query = supabase
     .from("payments")
@@ -568,6 +599,8 @@ export async function getPayments(
 }
 
 export async function getStudentPayments(studentId: string): Promise<Payment[]> {
+  if (await isProfesor()) return []
+
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("payments")
@@ -590,6 +623,7 @@ export async function upsertPayment(
   paymentMethod?: string,
   notes?: string
 ) {
+  await assertCanWritePayments()
   const supabase = await createClient()
 
   // Check if payment record exists
@@ -634,23 +668,28 @@ export async function upsertPayment(
 
 export async function getDashboardStats() {
   const supabase = await createClient()
+  const hideFinancials = await isProfesor()
 
   const [
     { count: studentsCount },
     { count: coursesCount },
-    { data: pendingPayments },
-    { data: overduePayments },
+    pendingResult,
+    overdueResult,
   ] = await Promise.all([
     supabase.from("students").select("*", { count: "exact", head: true }),
     supabase.from("courses").select("*", { count: "exact", head: true }),
-    supabase.from("payments").select("amount").eq("status", "pendiente"),
-    supabase.from("payments").select("amount").eq("status", "vencido"),
+    hideFinancials
+      ? Promise.resolve({ data: [] as { amount: number | null }[] })
+      : supabase.from("payments").select("amount").eq("status", "pendiente"),
+    hideFinancials
+      ? Promise.resolve({ data: [] as { amount: number | null }[] })
+      : supabase.from("payments").select("amount").eq("status", "vencido"),
   ])
 
   const pendingAmount =
-    pendingPayments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
+    pendingResult.data?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
   const overdueAmount =
-    overduePayments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
+    overdueResult.data?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
 
   return {
     totalStudents: studentsCount || 0,
@@ -712,6 +751,7 @@ export async function deleteStudent(id: string) {
 }
 
 export async function deletePayment(id: string) {
+  await assertCanWritePayments()
   const supabase = await createClient()
   const { error } = await supabase.from("payments").delete().eq("id", id)
   if (error) throw error

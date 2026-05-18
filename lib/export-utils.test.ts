@@ -5,7 +5,7 @@ describe("buildCsv", () => {
   const columns = [
     { key: "name", label: "Alumno" },
     { key: "grade", label: "Nota" },
-  ]
+  ] as const
 
   it("uses semicolon as separator", () => {
     const csv = buildCsv(
