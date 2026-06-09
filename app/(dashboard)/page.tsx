@@ -10,7 +10,8 @@ export default async function HomePage() {
   ])
 
   const recentStudents = students.slice(0, 5)
-  const userRole = currentUser?.profile?.role || "secretaria"
+  // Default al rol menos privilegiado: un perfil sin rol no debe heredar accesos.
+  const userRole = currentUser?.profile?.role || "padre"
 
   return (
     <DashboardContent 
