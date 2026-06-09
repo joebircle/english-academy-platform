@@ -3,8 +3,8 @@
 export const CSV_SEPARATOR = ";"
 
 export function buildCsv<T extends Record<string, unknown>>(
-  data: T[],
-  columns: { key: keyof T; label: string }[],
+  data: readonly T[],
+  columns: readonly { key: keyof T; label: string }[],
   separator: string = CSV_SEPARATOR
 ): string {
   const headers = columns.map((col) => col.label).join(separator)
