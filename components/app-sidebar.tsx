@@ -48,9 +48,9 @@ const navigation: NavItem[] = [
   {
     name: "Gestión Financiera",
     icon: CreditCard,
-    roles: ["admin"],
+    roles: ["admin", "secretaria"],
     children: [
-      { name: "Pagos", href: "/financiero/pagos", icon: CreditCard, roles: ["admin"] },
+      { name: "Pagos", href: "/financiero/pagos", icon: CreditCard, roles: ["admin", "secretaria"] },
     ],
   },
 ]

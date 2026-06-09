@@ -32,7 +32,7 @@ export function DashboardContent({
   recentStudents,
   userRole,
 }: DashboardContentProps) {
-  const isAdmin = userRole === "admin"
+  const canViewPayments = userRole === "admin" || userRole === "secretaria"
 
   return (
     <div className="p-8">
@@ -87,7 +87,7 @@ export function DashboardContent({
           </CardContent>
         </Card>
 
-        {isAdmin && (
+        {canViewPayments && (
           <>
             <Card>
               <CardContent className="p-6">
@@ -166,7 +166,7 @@ export function DashboardContent({
                 <ArrowRight className="w-4 h-4 ml-auto" />
               </Button>
             </Link>
-            {isAdmin ? (
+            {canViewPayments && (
               <Link href="/financiero/pagos">
                 <Button
                   variant="outline"
@@ -177,16 +177,6 @@ export function DashboardContent({
                   <ArrowRight className="w-4 h-4 ml-auto" />
                 </Button>
               </Link>
-            ) : (
-              <Button
-                variant="outline"
-                disabled
-                className="w-full justify-start gap-3 h-12 bg-transparent opacity-60 cursor-not-allowed"
-              >
-                <CreditCard className="w-5 h-5 text-primary" />
-                <span>Registrar Pago (solo admin)</span>
-                <ArrowRight className="w-4 h-4 ml-auto" />
-              </Button>
             )}
           </CardContent>
         </Card>
