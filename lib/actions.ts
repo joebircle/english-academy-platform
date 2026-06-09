@@ -473,21 +473,11 @@ export async function deleteCommunication(id: string) {
 
 // ============ PAYMENT ACCESS CONTROL ============
 
-// Solo administradores pueden leer y modificar datos financieros.
-// Esta es una protección a nivel de aplicación.
-async function isProfesor(): Promise<boolean> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return false
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single()
-  return profile?.role === "profesor"
-}
+// Solo admin y secretaria pueden leer y modificar datos financieros.
+// Profesor y padre quedan bloqueados. Protección a nivel de aplicación.
+export const PAYMENT_ROLES = ["admin", "secretaria"] as const
 
-async function isAdmin(): Promise<boolean> {
+async function canAccessPayments(): Promise<boolean> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return false
@@ -496,19 +486,19 @@ async function isAdmin(): Promise<boolean> {
     .select("role")
     .eq("id", user.id)
     .single()
-  return profile?.role === "admin"
+  return PAYMENT_ROLES.includes(profile?.role as (typeof PAYMENT_ROLES)[number])
 }
 
 async function assertCanWritePayments() {
-  if (!(await isAdmin())) {
-    throw new Error("Forbidden: only admins can modify financial data")
+  if (!(await canAccessPayments())) {
+    throw new Error("Forbidden: only admin and secretaria can modify financial data")
   }
 }
 
 // ============ PAYMENT CONCEPTS ============
 
 export async function getPaymentConcepts(): Promise<PaymentConcept[]> {
-  if (!(await isAdmin())) return []
+  if (!(await canAccessPayments())) return []
 
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -569,7 +559,7 @@ export async function deletePaymentConcept(id: string) {
 // ============ PAYMENTS ============
 
 export async function getStudentPaymentStatuses(): Promise<Record<string, "al_dia" | "con_deuda">> {
-  if (!(await isAdmin())) return {}
+  if (!(await canAccessPayments())) return {}
 
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -593,7 +583,7 @@ export async function getPayments(
   studentId?: string,
   status?: PaymentStatus
 ): Promise<Payment[]> {
-  if (!(await isAdmin())) return []
+  if (!(await canAccessPayments())) return []
 
   const supabase = await createClient()
   let query = supabase
@@ -611,7 +601,7 @@ export async function getPayments(
 }
 
 export async function getStudentPayments(studentId: string): Promise<Payment[]> {
-  if (!(await isAdmin())) return []
+  if (!(await canAccessPayments())) return []
 
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -680,7 +670,7 @@ export async function upsertPayment(
 
 export async function getDashboardStats() {
   const supabase = await createClient()
-  const hideFinancials = !(await isAdmin())
+  const hideFinancials = !(await canAccessPayments())
 
   const [
     { count: studentsCount },

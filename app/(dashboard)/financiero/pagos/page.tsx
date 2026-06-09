@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation"
 import { PaymentsPageWrapper } from "@/components/payments-page-wrapper"
-import { getCurrentUser, getPayments, getStudents, getPaymentConcepts, getCourses } from "@/lib/actions"
+import { getCurrentUser, getPayments, getStudents, getPaymentConcepts, getCourses, PAYMENT_ROLES } from "@/lib/actions"
 
 export default async function PaymentsPage() {
   const currentUser = await getCurrentUser()
-  if (!currentUser || currentUser.profile?.role !== "admin") {
+  const role = currentUser?.profile?.role
+  if (!role || !PAYMENT_ROLES.includes(role)) {
     redirect("/")
   }
 
