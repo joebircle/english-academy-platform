@@ -65,6 +65,7 @@ import {
 import { PageHeader } from "@/components/page-header"
 import { exportToExcel, formatDateForExport, formatCurrencyForExport } from "@/lib/export-utils"
 import { upsertPayment, createPaymentConcept, updatePaymentConcept, deletePayment, deletePaymentConcept } from "@/lib/actions"
+import { formatDateOnly } from "@/lib/date-utils"
 import type { Payment, Student, PaymentConcept, PaymentStatus } from "@/lib/types"
 
 const meses = [
@@ -685,9 +686,7 @@ export function PaymentsContent({ payments, students, concepts }: PaymentsConten
                     </TableCell>
                     <TableCell>{getStatusBadge(payment.status)}</TableCell>
                     <TableCell>
-                      {payment.payment_date
-                        ? new Date(payment.payment_date).toLocaleDateString("es-AR")
-                        : "-"}
+                      {formatDateOnly(payment.payment_date)}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {payment.payment_method || "-"}

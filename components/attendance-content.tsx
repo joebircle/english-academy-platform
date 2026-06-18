@@ -16,6 +16,7 @@ import {
 import { PageHeader } from "@/components/page-header"
 import { upsertAttendance } from "@/lib/actions"
 import { exportToExcel } from "@/lib/export-utils"
+import { formatDateOnly } from "@/lib/date-utils"
 import type { Course, Student, AttendanceStatus } from "@/lib/types"
 
 interface AttendanceContentProps {
@@ -214,7 +215,7 @@ export function AttendanceContent({ courses, students }: AttendanceContentProps)
         <CardHeader>
           <CardTitle className="text-lg">
             Lista de Asistencia -{" "}
-            {new Date(selectedDate + "T12:00:00").toLocaleDateString("es-AR", {
+            {formatDateOnly(selectedDate, {
               weekday: "long",
               year: "numeric",
               month: "long",

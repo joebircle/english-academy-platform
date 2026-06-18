@@ -17,6 +17,7 @@ import {
   Printer,
 } from "lucide-react"
 import { generateReportCardPDF } from "@/lib/export-utils"
+import { formatDateOnly } from "@/lib/date-utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -66,7 +67,9 @@ export function StudentDetailContent({
   const calculateAge = (birthDate: string | null) => {
     if (!birthDate) return null
     const today = new Date()
-    const birth = new Date(birthDate)
+    // Anclar al mediodía local para evitar el corrimiento de día por timezone
+    const [by, bm, bd] = birthDate.split("-").map(Number)
+    const birth = new Date(by, bm - 1, bd, 12, 0, 0)
     let age = today.getFullYear() - birth.getFullYear()
     const m = today.getMonth() - birth.getMonth()
     if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
@@ -347,7 +350,7 @@ export function StudentDetailContent({
                     <div>
                       <p className="text-sm text-muted-foreground">Fecha de nacimiento</p>
                       <p className="font-medium">
-                        {new Date(student.birth_date).toLocaleDateString("es-AR")}
+                        {formatDateOnly(student.birth_date)}
                         {age && ` (${age} años)`}
                       </p>
                     </div>
@@ -441,7 +444,7 @@ export function StudentDetailContent({
                     {attendance.map((record) => (
                       <TableRow key={record.id}>
                         <TableCell>
-                          {new Date(record.date).toLocaleDateString("es-AR", {
+                          {formatDateOnly(record.date, {
                             weekday: "long",
                             year: "numeric",
                             month: "long",
@@ -492,7 +495,7 @@ export function StudentDetailContent({
                       <TableRow key={grade.id}>
                         <TableCell className="font-medium">Examen {grade.exam_number}</TableCell>
                         <TableCell>
-                          {grade.date ? new Date(grade.date).toLocaleDateString("es-AR") : "-"}
+                          {formatDateOnly(grade.date)}
                         </TableCell>
                         <TableCell>
                           <span
@@ -577,9 +580,7 @@ export function StudentDetailContent({
                         </TableCell>
                         <TableCell>{getPaymentBadge(payment.status)}</TableCell>
                         <TableCell>
-                          {payment.payment_date
-                            ? new Date(payment.payment_date).toLocaleDateString("es-AR")
-                            : "-"}
+                          {formatDateOnly(payment.payment_date)}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {payment.payment_method || "-"}

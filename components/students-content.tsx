@@ -43,6 +43,7 @@ import { Label } from "@/components/ui/label"
 import { PageHeader } from "@/components/page-header"
 import { createStudent, updateStudent, deleteStudent } from "@/lib/actions"
 import { exportToExcel, formatDateForExport } from "@/lib/export-utils"
+import { formatDateOnly } from "@/lib/date-utils"
 import type { Student, Course } from "@/lib/types"
 
 interface StudentsContentProps {
@@ -304,7 +305,7 @@ export function StudentsContent({ students, courses, paymentStatuses = {} }: Stu
                           {student.birth_date && (
                             <p className="text-xs text-muted-foreground">
                               Nacimiento:{" "}
-                              {new Date(student.birth_date + "T12:00:00").toLocaleDateString("es-AR")}
+                              {formatDateOnly(student.birth_date)}
                             </p>
                           )}
                         </div>
