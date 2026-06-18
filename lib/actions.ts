@@ -72,7 +72,7 @@ export async function createCourse(formData: FormData) {
   })
 
   if (error) throw error
-  revalidatePath("/academico/cursos", "max")
+  revalidatePath("/academico/cursos", "page")
 }
 
 export async function updateCourse(id: string, formData: FormData) {
@@ -90,7 +90,7 @@ export async function updateCourse(id: string, formData: FormData) {
     .eq("id", id)
 
   if (error) throw error
-  revalidatePath("/academico/cursos", "max")
+  revalidatePath("/academico/cursos", "page")
 }
 
 export async function deleteCourse(id: string) {
@@ -105,7 +105,7 @@ export async function deleteCourse(id: string) {
   // Delete the course
   const { error } = await supabase.from("courses").delete().eq("id", id)
   if (error) throw error
-  revalidatePath("/academico/cursos", "max")
+  revalidatePath("/academico/cursos", "page")
 }
 
 // ============ STUDENTS ============
@@ -155,7 +155,7 @@ export async function createStudent(formData: FormData) {
   const { error } = await supabase.from("students").insert(studentData)
 
   if (error) throw error
-  revalidatePath("/academico/alumnos", "max")
+  revalidatePath("/academico/alumnos", "page")
 }
 
 export async function updateStudent(id: string, formData: FormData) {
@@ -175,7 +175,7 @@ export async function updateStudent(id: string, formData: FormData) {
     .eq("id", id)
 
   if (error) throw error
-  revalidatePath("/academico/alumnos", "max")
+  revalidatePath("/academico/alumnos", "page")
 }
 
 // ============ ATTENDANCE ============
@@ -245,7 +245,7 @@ export async function upsertAttendance(
     if (error) throw error
   }
 
-  revalidatePath("/academico/asistencia", "max")
+  revalidatePath("/academico/asistencia", "page")
 }
 
 // ============ GRADES ============
@@ -285,14 +285,19 @@ export async function upsertGrade(
   notes?: string
 ) {
   const supabase = await createClient()
+  const year = new Date().getFullYear()
 
-  // Check if grade record exists
+  // Check if grade record exists.
+  // The unique constraint is (student_id, course_id, exam_number, year),
+  // so the existence check must filter by year too to avoid both a
+  // multiple-rows error from maybeSingle() and unique-constraint violations.
   const { data: existing } = await supabase
     .from("grades")
     .select("id")
     .eq("student_id", studentId)
     .eq("course_id", courseId)
     .eq("exam_number", examNumber)
+    .eq("year", year)
     .maybeSingle()
 
   if (existing) {
@@ -309,11 +314,12 @@ export async function upsertGrade(
       score,
       date,
       notes,
+      year,
     })
     if (error) throw error
   }
 
-  revalidatePath("/academico/calificaciones", "max")
+  revalidatePath("/academico/calificaciones", "page")
 }
 
 // ============ REPORTS ============
@@ -384,14 +390,14 @@ export async function upsertReport(
     if (error) throw error
   }
 
-  revalidatePath("/academico/informes", "max")
+  revalidatePath("/academico/informes", "page")
 }
 
 export async function deleteReport(id: string) {
   const supabase = await createClient()
   const { error } = await supabase.from("reports").delete().eq("id", id)
   if (error) throw error
-  revalidatePath("/academico/informes", "max")
+  revalidatePath("/academico/informes", "page")
 }
 
 // ============ COMMUNICATIONS ============
@@ -461,14 +467,14 @@ export async function createCommunication(formData: FormData) {
     }
   }
 
-  revalidatePath("/academico/comunicaciones", "max")
+  revalidatePath("/academico/comunicaciones", "page")
 }
 
 export async function deleteCommunication(id: string) {
   const supabase = await createClient()
   const { error } = await supabase.from("communications").delete().eq("id", id)
   if (error) throw error
-  revalidatePath("/academico/comunicaciones", "max")
+  revalidatePath("/academico/comunicaciones", "page")
 }
 
 // ============ PAYMENT ACCESS CONTROL ============
@@ -524,7 +530,7 @@ export async function createPaymentConcept(formData: FormData) {
   })
 
   if (error) throw error
-  revalidatePath("/financiero/pagos", "max")
+  revalidatePath("/financiero/pagos", "page")
 }
 
 export async function updatePaymentConcept(id: string, formData: FormData) {
@@ -541,7 +547,7 @@ export async function updatePaymentConcept(id: string, formData: FormData) {
     .eq("id", id)
 
   if (error) throw error
-  revalidatePath("/financiero/pagos", "max")
+  revalidatePath("/financiero/pagos", "page")
 }
 
 export async function deletePaymentConcept(id: string) {
@@ -553,7 +559,7 @@ export async function deletePaymentConcept(id: string) {
     .eq("id", id)
 
   if (error) throw error
-  revalidatePath("/financiero/pagos", "max")
+  revalidatePath("/financiero/pagos", "page")
 }
 
 // ============ PAYMENTS ============
@@ -663,7 +669,7 @@ export async function upsertPayment(
     if (error) throw error
   }
 
-  revalidatePath("/financiero/pagos", "max")
+  revalidatePath("/financiero/pagos", "page")
 }
 
 // ============ DASHBOARD STATS ============
@@ -749,7 +755,7 @@ export async function deleteStudent(id: string) {
   // Then delete the student
   const { error } = await supabase.from("students").delete().eq("id", id)
   if (error) throw error
-  revalidatePath("/academico/alumnos", "max")
+  revalidatePath("/academico/alumnos", "page")
 }
 
 export async function deletePayment(id: string) {
@@ -757,5 +763,5 @@ export async function deletePayment(id: string) {
   const supabase = await createClient()
   const { error } = await supabase.from("payments").delete().eq("id", id)
   if (error) throw error
-  revalidatePath("/financiero/pagos", "max")
+  revalidatePath("/financiero/pagos", "page")
 }
