@@ -7,7 +7,8 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const currentUser = await getCurrentUser()
-  const userRole = currentUser?.profile?.role || "secretaria"
+  // Default al rol menos privilegiado: un perfil sin rol no debe heredar accesos.
+  const userRole = currentUser?.profile?.role || "padre"
 
   return (
     <div className="flex min-h-screen bg-background">
