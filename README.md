@@ -5,6 +5,7 @@ Plataforma de gestion academica y financiera para The English Club, una academia
 ## Tech Stack
 
 
+
 - **Framework:** Next.js 16 (App Router) + React 19 + TypeScript
 - **Base de datos:** Supabase (PostgreSQL + Auth + RLS)
 - **UI:** Tailwind CSS 4 + shadcn/ui (Radix UI)
