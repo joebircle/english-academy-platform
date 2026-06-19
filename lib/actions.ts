@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { PAYMENT_ROLES } from "@/lib/constants"
 import type {
   Course,
   Student,
@@ -479,10 +480,8 @@ export async function deleteCommunication(id: string) {
 
 // ============ PAYMENT ACCESS CONTROL ============
 
-// Solo admin y secretaria pueden leer y modificar datos financieros.
-// Profesor y padre quedan bloqueados. Protección a nivel de aplicación.
-export const PAYMENT_ROLES = ["admin", "secretaria"] as const
-
+// PAYMENT_ROLES se define en @/lib/constants porque este archivo es "use server"
+// y solo puede exportar funciones async.
 async function canAccessPayments(): Promise<boolean> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

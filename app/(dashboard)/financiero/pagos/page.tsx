@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { PaymentsPageWrapper } from "@/components/payments-page-wrapper"
-import { getCurrentUser, getPayments, getStudents, getPaymentConcepts, getCourses, PAYMENT_ROLES } from "@/lib/actions"
+import { getCurrentUser, getPayments, getStudents, getPaymentConcepts, getCourses } from "@/lib/actions"
+import { PAYMENT_ROLES } from "@/lib/constants"
 
 export default async function PaymentsPage() {
   const currentUser = await getCurrentUser()
