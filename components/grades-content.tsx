@@ -55,7 +55,7 @@ export function GradesContent({ courses, students, grades }: GradesContentProps)
   const courseStudents = students.filter((s) => s.course_id === selectedCourse)
 
   const getStudentGrade = (studentId: string, examNumber: number): number | null => {
-    const key = `${studentId}-${examNumber}`
+    const key = `${studentId}:${examNumber}`
     if (key in editingGrades) return editingGrades[key]
     const grade = grades.find(
       (g) => g.student_id === studentId && g.exam_number === examNumber
@@ -64,7 +64,7 @@ export function GradesContent({ courses, students, grades }: GradesContentProps)
   }
 
   const handleGradeChange = (studentId: string, examNumber: number, value: string) => {
-    const key = `${studentId}-${examNumber}`
+    const key = `${studentId}:${examNumber}`
     const numValue = value === "" ? null : Number(value)
     if (numValue !== null && (numValue < 0 || numValue > 100)) return
     setEditingGrades((prev) => ({ ...prev, [key]: numValue }))
@@ -76,7 +76,7 @@ export function GradesContent({ courses, students, grades }: GradesContentProps)
     setIsSaving(true)
     try {
       for (const [key, score] of Object.entries(editingGrades)) {
-        const [studentId, examNumber] = key.split("-")
+        const [studentId, examNumber] = key.split(":")
         await upsertGrade(studentId, selectedCourse, Number(examNumber), score)
       }
       setEditingGrades({})
