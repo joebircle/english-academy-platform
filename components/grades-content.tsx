@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { FileText, TrendingUp, TrendingDown, Minus, Save, Download } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +27,7 @@ import { Input } from "@/components/ui/input"
 import { PageHeader } from "@/components/page-header"
 import { upsertGrade } from "@/lib/actions"
 import { exportToExcel } from "@/lib/export-utils"
+import { EXAMS, EXTRA_GRADES, getRetakeNumber } from "@/lib/grades"
 import type { Course, Student, Grade } from "@/lib/types"
 
 interface GradesContentProps {
@@ -33,18 +35,6 @@ interface GradesContentProps {
   students: Student[]
   grades: Grade[]
 }
-
-const EXAMS = [
-  { number: 1, name: "Examen 1" },
-  { number: 2, name: "Examen 2" },
-  { number: 3, name: "Examen 3" },
-  { number: 4, name: "Examen 4" },
-]
-
-const EXTRA_GRADES = [
-  { number: 5, name: "Oral / Proyecto" },
-  { number: 6, name: "Nota Final" },
-]
 
 export function GradesContent({ courses, students, grades }: GradesContentProps) {
   const router = useRouter()
@@ -81,7 +71,7 @@ export function GradesContent({ courses, students, grades }: GradesContentProps)
       }
       setEditingGrades({})
       router.refresh()
-      alert("Calificaciones guardadas correctamente")
+      toast.success("Calificaciones guardadas correctamente")
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error desconocido"
       alert(`Error al guardar las calificaciones: ${message}`)
@@ -90,9 +80,13 @@ export function GradesContent({ courses, students, grades }: GradesContentProps)
     }
   }
 
+  // Si hay recuperatorio, reemplaza la nota del examen
+  const getEffectiveGrade = (studentId: string, examNumber: number): number | null =>
+    getStudentGrade(studentId, getRetakeNumber(examNumber)) ?? getStudentGrade(studentId, examNumber)
+
   // Promedio automatico de los 4 examenes
   const calculateAverage = (studentId: string): number | null => {
-    const examGrades = EXAMS.map((e) => getStudentGrade(studentId, e.number)).filter(
+    const examGrades = EXAMS.map((e) => getEffectiveGrade(studentId, e.number)).filter(
       (g): g is number => g !== null
     )
     if (examGrades.length === 0) return null
@@ -100,7 +94,7 @@ export function GradesContent({ courses, students, grades }: GradesContentProps)
   }
 
   const getTrend = (studentId: string) => {
-    const examGrades = EXAMS.map((e) => getStudentGrade(studentId, e.number)).filter(
+    const examGrades = EXAMS.map((e) => getEffectiveGrade(studentId, e.number)).filter(
       (g): g is number => g !== null
     )
     if (examGrades.length < 2) return null
@@ -133,6 +127,7 @@ export function GradesContent({ courses, students, grades }: GradesContentProps)
       }
       EXAMS.forEach((exam) => {
         row[exam.name] = getStudentGrade(student.id, exam.number) ?? "-"
+        row[`Recup. ${exam.name}`] = getStudentGrade(student.id, getRetakeNumber(exam.number)) ?? "-"
       })
       row["Promedio"] = calculateAverage(student.id) ?? "-"
       row["Oral / Proyecto"] = getStudentGrade(student.id, 5) ?? "-"
@@ -145,7 +140,10 @@ export function GradesContent({ courses, students, grades }: GradesContentProps)
       `calificaciones-${courseName}`,
       [
         { key: "Alumno", label: "Alumno" },
-        ...EXAMS.map(e => ({ key: e.name, label: e.name })),
+        ...EXAMS.flatMap(e => [
+          { key: e.name, label: e.name },
+          { key: `Recup. ${e.name}`, label: `Recup. ${e.name}` },
+        ]),
         { key: "Promedio", label: "Promedio" },
         { key: "Oral / Proyecto", label: "Oral / Proyecto" },
         { key: "Nota Final", label: "Nota Final" },
@@ -224,11 +222,17 @@ export function GradesContent({ courses, students, grades }: GradesContentProps)
                 <TableHeader>
                   <TableRow>
                     <TableHead className="min-w-[180px]">Alumno</TableHead>
-                    {EXAMS.map((exam) => (
+                    {EXAMS.flatMap((exam) => [
                       <TableHead key={exam.number} className="text-center min-w-[90px]">
                         {exam.name}
-                      </TableHead>
-                    ))}
+                      </TableHead>,
+                      <TableHead
+                        key={getRetakeNumber(exam.number)}
+                        className="text-center min-w-[90px] text-xs"
+                      >
+                        Recup. {exam.number}
+                      </TableHead>,
+                    ])}
                     <TableHead className="text-center min-w-[90px] bg-muted/50">Promedio</TableHead>
                     {EXTRA_GRADES.map((extra) => (
                       <TableHead key={extra.number} className="text-center min-w-[100px] bg-muted/30">
@@ -259,25 +263,27 @@ export function GradesContent({ courses, students, grades }: GradesContentProps)
                             </span>
                           </div>
                         </TableCell>
-                        {EXAMS.map((exam) => {
-                          const score = getStudentGrade(student.id, exam.number)
-                          return (
-                            <TableCell key={exam.number} className="text-center">
-                              <Input
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="1"
-                                value={score ?? ""}
-                                onChange={(e) =>
-                                  handleGradeChange(student.id, exam.number, e.target.value)
-                                }
-                                className={`w-16 text-center mx-auto ${getGradeBg(score)} ${getGradeColor(score)}`}
-                                placeholder="-"
-                              />
-                            </TableCell>
-                          )
-                        })}
+                        {EXAMS.flatMap((exam) =>
+                          [exam.number, getRetakeNumber(exam.number)].map((gradeNumber) => {
+                            const score = getStudentGrade(student.id, gradeNumber)
+                            return (
+                              <TableCell key={gradeNumber} className="text-center">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="1"
+                                  value={score ?? ""}
+                                  onChange={(e) =>
+                                    handleGradeChange(student.id, gradeNumber, e.target.value)
+                                  }
+                                  className={`w-16 text-center mx-auto ${getGradeBg(score)} ${getGradeColor(score)}`}
+                                  placeholder="-"
+                                />
+                              </TableCell>
+                            )
+                          })
+                        )}
                         {/* Promedio automatico */}
                         <TableCell className="text-center bg-muted/20">
                           {average !== null ? (

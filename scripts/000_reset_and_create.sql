@@ -82,7 +82,7 @@ CREATE TABLE public.grades (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
   course_id UUID NOT NULL REFERENCES public.courses(id) ON DELETE CASCADE,
-  exam_number INTEGER NOT NULL CHECK (exam_number >= 1 AND exam_number <= 6),
+  exam_number INTEGER NOT NULL CHECK (exam_number >= 1 AND exam_number <= 10),
   score DECIMAL(5,2) CHECK (score >= 0 AND score <= 100),
   date DATE,
   notes TEXT,
