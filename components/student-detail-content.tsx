@@ -30,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import type { Student, Course, Attendance, Grade, Report, Payment } from "@/lib/types"
+import { getEffectiveExamScore, getGradeLabel } from "@/lib/grades"
 
 interface StudentDetailContentProps {
   student: Student | null
@@ -152,13 +153,15 @@ export function StudentDetailContent({
       const grade = grades.find(g => g.exam_number === examNumber)
       return grade?.score ?? null
     }
+    // Exams 1-4 use the retake grade when there is one
+    const getExamGrade = (examNumber: number) => getEffectiveExamScore(grades, examNumber)
 
     // Get stage reports
     const stage1 = reports.find(r => r.period?.toLowerCase().includes("etapa 1") || r.period?.toLowerCase().includes("stage 1"))
     const stage2 = reports.find(r => r.period?.toLowerCase().includes("etapa 2") || r.period?.toLowerCase().includes("stage 2"))
 
     // Calculate yearly average from 4 exams
-    const validGradesForAvg = [1, 2, 3, 4].map(n => getGradeByExam(n)).filter(g => g !== null) as number[]
+    const validGradesForAvg = [1, 2, 3, 4].map(n => getExamGrade(n)).filter(g => g !== null) as number[]
     const yearlyAvg = validGradesForAvg.length > 0 
       ? Math.round(validGradesForAvg.reduce((a, b) => a + b, 0) / validGradesForAvg.length)
       : null
@@ -181,10 +184,10 @@ export function StudentDetailContent({
       stage1Report: stage1?.content || "",
       stage2Report: stage2?.content || "",
       grades: {
-        exam1: getGradeByExam(1),
-        exam2: getGradeByExam(2),
-        exam3: getGradeByExam(3),
-        exam4: getGradeByExam(4),
+        exam1: getExamGrade(1),
+        exam2: getExamGrade(2),
+        exam3: getExamGrade(3),
+        exam4: getExamGrade(4),
         oral: getGradeByExam(5),
       },
       yearlyAverage: yearlyAvg,
@@ -490,7 +493,7 @@ export function StudentDetailContent({
                   <TableBody>
                     {grades.map((grade) => (
                       <TableRow key={grade.id}>
-                        <TableCell className="font-medium">Examen {grade.exam_number}</TableCell>
+                        <TableCell className="font-medium">{getGradeLabel(grade.exam_number)}</TableCell>
                         <TableCell>
                           {grade.date ? new Date(grade.date).toLocaleDateString("es-AR") : "-"}
                         </TableCell>
