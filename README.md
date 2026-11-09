@@ -1,5 +1,6 @@
 # The English Club - Sistema de Gestion
 
+
 Plataforma de gestion academica y financiera para The English Club, una academia de ingles.
 
 ## Tech Stack
