@@ -32,11 +32,13 @@ import {
 } from "@/components/ui/table"
 import type { Student, Course, Attendance, Grade, Report, Payment } from "@/lib/types"
 import { getEffectiveExamScore, getGradeLabel, getRetakeNumber } from "@/lib/grades"
+import { summarizeAttendance } from "@/lib/attendance"
 
 interface StudentDetailContentProps {
   student: Student | null
   course: Course | null
   attendance: Attendance[]
+  courseClassDates: string[]
   grades: Grade[]
   reports: Report[]
   payments: Payment[]
@@ -46,6 +48,7 @@ export function StudentDetailContent({
   student, 
   course,
   attendance,
+  courseClassDates,
   grades,
   reports,
   payments 
@@ -126,15 +129,7 @@ export function StudentDetailContent({
   }
 
   // Calculate stats
-  const attendanceStats = {
-    total: attendance.length,
-    present: attendance.filter((a) => a.status === "presente").length,
-    absent: attendance.filter((a) => a.status === "ausente").length,
-  }
-  const attendanceRate =
-    attendanceStats.total > 0
-      ? Math.round((attendanceStats.present / attendanceStats.total) * 100)
-      : 0
+  const attendanceSummary = summarizeAttendance(attendance, courseClassDates, student.enrollment_date)
 
   const validGrades = grades.filter(g => g.score !== null)
   const gradeAverage =
@@ -256,7 +251,7 @@ export function StudentDetailContent({
                 <Check className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-semibold">{attendanceRate}%</p>
+                <p className="text-2xl font-semibold">{attendanceSummary.rate === null ? "-" : `${attendanceSummary.rate}%`}</p>
                 <p className="text-xs text-muted-foreground">Asistencia</p>
               </div>
             </div>
