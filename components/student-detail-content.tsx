@@ -31,7 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import type { Student, Course, Attendance, Grade, Report, Payment } from "@/lib/types"
-import { getEffectiveExamScore, getGradeLabel } from "@/lib/grades"
+import { getEffectiveExamScore, getGradeLabel, getRetakeNumber } from "@/lib/grades"
 
 interface StudentDetailContentProps {
   student: Student | null
@@ -171,13 +171,7 @@ export function StudentDetailContent({
 
     // Calculate attendance stats
     const totalClasses = attendance.length
-    const presentCount = attendance.filter(a => a.status === "presente").length
     const absentCount = attendance.filter(a => a.status === "ausente").length
-    const lateCount = attendance.filter(a => a.status === "tardanza").length
-    const justifiedCount = attendance.filter(a => a.status === "justificado").length
-    const attendancePercentage = totalClasses > 0 
-      ? Math.round(((presentCount + lateCount + justifiedCount) / totalClasses) * 100)
-      : 0
 
     generateReportCardPDF({
       studentName: `${student.first_name} ${student.last_name}`,
@@ -187,22 +181,19 @@ export function StudentDetailContent({
       stage1Report: stage1?.content || "",
       stage2Report: stage2?.content || "",
       grades: {
-        exam1: getExamGrade(1),
-        exam2: getExamGrade(2),
-        exam3: getExamGrade(3),
-        exam4: getExamGrade(4),
+        exam1: getGradeByExam(1),
+        exam2: getGradeByExam(2),
+        exam3: getGradeByExam(3),
+        exam4: getGradeByExam(4),
+        retake1: getGradeByExam(getRetakeNumber(1)),
+        retake2: getGradeByExam(getRetakeNumber(2)),
+        retake3: getGradeByExam(getRetakeNumber(3)),
+        retake4: getGradeByExam(getRetakeNumber(4)),
         oral: getGradeByExam(5),
       },
       yearlyAverage: yearlyAvg,
       finalExam: getGradeByExam(6),
-      attendance: totalClasses > 0 ? {
-        totalClasses,
-        present: presentCount,
-        absent: absentCount,
-        late: lateCount,
-        justified: justifiedCount,
-        percentage: attendancePercentage,
-      } : undefined,
+      attendance: totalClasses > 0 ? { absent: absentCount } : undefined,
     })
   }
 
