@@ -211,6 +211,19 @@ export async function getStudentAttendance(studentId: string): Promise<Attendanc
   return data || []
 }
 
+// Dates on which the course has at least one attendance row (the classes held).
+export async function getCourseClassDates(courseId: string): Promise<string[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("attendance")
+    .select("date")
+    .eq("course_id", courseId)
+    .limit(10000)
+
+  if (error) throw error
+  return [...new Set((data || []).map((row) => row.date as string))]
+}
+
 export async function upsertAttendance(
   studentId: string,
   courseId: string,

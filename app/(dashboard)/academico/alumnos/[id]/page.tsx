@@ -5,7 +5,8 @@ import {
   getStudentAttendance, 
   getStudentGrades,
   getStudentReports,
-  getStudentPayments 
+  getStudentPayments,
+  getCourseClassDates,
 } from "@/lib/actions"
 
 export default async function StudentDetailPage({
@@ -18,11 +19,12 @@ export default async function StudentDetailPage({
   const student = await getStudent(id)
   const course = student?.course_id ? await getCourse(student.course_id) : null
   
-  const [attendance, grades, reports, payments] = await Promise.all([
+  const [attendance, grades, reports, payments, courseClassDates] = await Promise.all([
     getStudentAttendance(id),
     getStudentGrades(id),
     getStudentReports(id),
     getStudentPayments(id),
+    student?.course_id ? getCourseClassDates(student.course_id) : Promise.resolve([]),
   ])
   
   return (
@@ -30,6 +32,7 @@ export default async function StudentDetailPage({
       student={student}
       course={course}
       attendance={attendance}
+      courseClassDates={courseClassDates}
       grades={grades}
       reports={reports}
       payments={payments}
