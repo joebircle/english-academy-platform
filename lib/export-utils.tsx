@@ -75,17 +75,16 @@ interface ReportCardData {
     exam2: number | null
     exam3: number | null
     exam4: number | null
+    retake1: number | null
+    retake2: number | null
+    retake3: number | null
+    retake4: number | null
     oral: number | null
   }
   yearlyAverage: number | null
   finalExam: number | null
   attendance?: {
-    totalClasses: number
-    present: number
     absent: number
-    late: number
-    justified: number
-    percentage: number
   }
   logoUrl?: string
 }
@@ -108,12 +107,7 @@ export function generateReportCardPDF(data: ReportCardData) {
       <p class="section-label">Asistencia:</p>
       <table class="attendance-table">
         <tr>
-          <td>Total de clases: <strong>${data.attendance.totalClasses}</strong></td>
-          <td>Presentes: <strong>${data.attendance.present}</strong></td>
-          <td>Ausentes: <strong>${data.attendance.absent}</strong></td>
-          <td>Tardanzas: <strong>${data.attendance.late}</strong></td>
-          <td>Justificadas: <strong>${data.attendance.justified}</strong></td>
-          <td>Asistencia: <strong>${data.attendance.percentage}%</strong></td>
+          <td>Inasistencias: <strong>${data.attendance.absent}</strong></td>
         </tr>
       </table>
     </div>
@@ -351,18 +345,22 @@ export function generateReportCardPDF(data: ReportCardData) {
         <div class="grades-section">
           <p class="section-label">Calificaciones:</p>
           <table class="grades-table">
+            ${[
+              ["Primer examen", data.grades.exam1, data.grades.retake1],
+              ["Segundo examen", data.grades.exam2, data.grades.retake2],
+              ["Tercer examen", data.grades.exam3, data.grades.retake3],
+              ["Cuarto examen", data.grades.exam4, data.grades.retake4],
+            ]
+              .map(
+                ([label, exam, retake]) => `
             <tr>
-              <td>Primer examen</td>
-              <td>${formatGrade(data.grades.exam1)}</td>
-              <td>Tercer examen</td>
-              <td>${formatGrade(data.grades.exam3)}</td>
-            </tr>
-            <tr>
-              <td>Segundo examen</td>
-              <td>${formatGrade(data.grades.exam2)}</td>
-              <td>Cuarto examen</td>
-              <td>${formatGrade(data.grades.exam4)}</td>
-            </tr>
+              <td>${label}</td>
+              <td>${formatGrade(exam as number | null)}</td>
+              <td>Recuperatorio</td>
+              <td>${formatGrade(retake as number | null)}</td>
+            </tr>`,
+              )
+              .join("")}
           </table>
 
           <div class="summary-row">
